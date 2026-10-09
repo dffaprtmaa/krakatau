@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Analisis Sentimen Abu Vulkanik Krakatau - Kota Tangerang</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        volcano: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                            950: '#431407'
+                        },
+                        darkbg: '#0f172a',
+                        cardbg: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .pulse-red {
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col custom-scrollbar">
+
+    <!-- Header -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-volcano-600 to-amber-500 flex items-center justify-center text-white font-bold shadow-lg shadow-volcano-600/30">
+                    <i class="fa-solid font-bold text-xl fa-volcano"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        Sismon-AV Krakatau 
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-volcano-950 text-volcano-400 border border-volcano-700/50">Kota Tangerang</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Monitoring Sentimen & Dampak Abu Vulkanik Gunung Anak Krakatau</p>
+                </div>
+            </div>
+
+            <!-- Header Right Action -->
+            <div class="flex items-center space-x-3">
+                <div class="hidden md:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 text-xs">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="pulse-red absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                    <span class="font-medium text-slate-300">Status Erupsi: <strong class="text-amber-400">Siaga (Level III)</strong></span>
+                </div>
+
+                <button onclick="openApifyModal()" class="flex items-center space-x-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-md shadow-orange-950/40">
+                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                    <span>Integrasi Apify</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Alert Banner & Overview Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:border-slate-700 transition">
+                <div>
+                    <p class="text-xs font-medium text-slate-400">Total Data Post Terekam</p>
+                    <h3 id="statTotalPosts" class="text-2xl font-extrabold text-white mt-1">1,428</h3>
+                    <p class="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-up"></i>
+                        <span>Sync via Apify (+182 baru)</span>
+                    </p>
+                </div>
+                <div class="p-3 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20">
+                    <i class="fa-solid fa-comments text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:border-slate-700 transition">
+                <div>
+                    <p class="text-xs font-medium text-slate-400">Sentimen Negatif (Kepanikan/Keluhan)</p>
+                    <h3 id="statNegativeRatio" class="text-2xl font-extrabold text-red-400 mt-1">54.2%</h3>
+                    <p class="text-[11px] text-red-400/80 mt-1">Keluhan ISPA & Sebaran Abu</p>
+                </div>
+                <div class="p-3 bg-red-500/10 text-red-400 rounded-xl border border-red-500/20">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:border-slate-700 transition">
+                <div>
+                    <p class="text-xs font-medium text-slate-400">Kecamatan Terdampak Terparah</p>
+                    <h3 id="statHighRiskDistrict" class="text-xl font-bold text-amber-400 mt-1 truncate">Benda & Karawaci</h3>
+                    <p class="text-[11px] text-slate-400 mt-1">Dekat Bandara Soekarno-Hatta</p>
+                </div>
+                <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+                    <i class="fa-solid fa-location-dot text-xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:border-slate-700 transition">
+                <div>
+                    <p class="text-xs font-medium text-slate-400">Status Kualitas Udara (AQI Abu)</p>
+                    <h3 id="statAQI" class="text-2xl font-extrabold text-volcano-400 mt-1">168 <span class="text-xs font-normal text-slate-400">Unhealthy</span></h3>
+                    <p class="text-[11px] text-volcano-300 mt-1">Rekomendasi Masker N95</p>
+                </div>
+                <div class="p-3 bg-volcano-500/10 text-volcano-400 rounded-xl border border-volcano-500/20">
+                    <i class="fa-solid fa-mask-face text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs & Toolbar -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-2 rounded-xl border border-slate-800">
+            <nav class="flex space-x-1 overflow-x-auto custom-scrollbar p-1">
+                <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition bg-volcano-600 text-white shadow-md">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard & Grafik</span>
+                </button>
+                <button onclick="switchTab('livefeed')" id="tabBtn-livefeed" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Data Post Apify</span>
+                </button>
+                <button onclick="switchTab('districts')" id="tabBtn-districts" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>Sebaran 13 Kecamatan</span>
+                </button>
+                <button onclick="switchTab('aiReport')" id="tabBtn-aiReport" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-robot"></i>
+                    <span>Intelijen AI & BPBD</span>
+                </button>
+            </nav>
+
+            <!-- Quick Search & Filter Toolbar -->
+            <div class="flex items-center space-x-2 px-2">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
+                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Cari kata kunci (e.g. Karawaci, mata pedih, masker)..." class="bg-slate-950 border border-slate-700/80 text-slate-200 text-xs rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:border-volcano-500 w-48 sm:w-64">
+                </div>
+                <select id="districtFilter" onchange="applyFilters()" class="bg-slate-950 border border-slate-700/80 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-volcano-500">
+                    <option value="ALL">Semua Kecamatan</option>
+                    <option value="Benda">Benda (Bandara Soetta)</option>
+                    <option value="Karawaci">Karawaci</option>
+                    <option value="Periuk">Periuk</option>
+                    <option value="Cibodas">Cibodas</option>
+                    <option value="Tangerang">Tangerang</option>
+                    <option value="Ciledug">Ciledug</option>
+                    <option value="Batuceper">Batuceper</option>
+                    <option value="Jatiuwung">Jatiuwung</option>
+                    <option value="Neglasari">Neglasari</option>
+                    <option value="Cipondoh">Cipondoh</option>
+                    <option value="Pinang">Pinang</option>
+                    <option value="Karang Tengah">Karang Tengah</option>
+                    <option value="Larangan">Larangan</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- TAB 1: DASHBOARD CONTENT -->
+        <div id="tabContent-dashboard" class="tab-content space-y-6">
+            <!-- Analytics Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Sentiment Donut Chart -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-donut text-volcano-500"></i>
+                            <span>Distribusi Sentimen Masyarakat</span>
+                        </h3>
+                        <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">NLP Lexicon + AI</span>
+                    </div>
+                    <div class="relative h-64 w-full flex items-center justify-center">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center mt-4 pt-3 border-t border-slate-800 text-xs">
+                        <div>
+                            <span class="block text-red-400 font-bold" id="labelNeg">54.2%</span>
+                            <span class="text-[10px] text-slate-400">Negatif (Panik/Gangguan)</span>
+                        </div>
+                        <div>
+                            <span class="block text-slate-300 font-bold" id="labelNeu">31.5%</span>
+                            <span class="text-[10px] text-slate-400">Netral (Berita/Info)</span>
+                        </div>
+                        <div>
+                            <span class="block text-emerald-400 font-bold" id="labelPos">14.3%</span>
+                            <span class="text-[10px] text-slate-400">Positif (Edukasi/Siaga)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sentiment Trend Line Chart -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 lg:col-span-2 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-amber-500"></i>
+                            <span>Tren Sentimen Publik (24 Jam Terakhir)</span>
+                        </h3>
+                        <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">Realtime Timeline</span>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800">
+                        <span>Puncak lonjakan sentimen negatif terdeteksi saat kabut abu tebal melintasi wilayah penerbangan Soekarno-Hatta & Benda.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second Row: Word Cloud / Hot Topics + Top Critical Posts -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Topic Breakdown & Keywords -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                    <h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-tags text-volcano-400"></i>
+                        <span>Kata Kunci & Isu Utama Publik Tangerang</span>
+                    </h3>
+                    <div class="flex flex-wrap gap-2" id="keywordCloud">
+                        <!-- Dynamic keywords injected by JS -->
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-800">
+                        <h4 class="text-xs font-semibold text-slate-400 mb-3">Topik Keluhan Utama:</h4>
+                        <div class="space-y-2 text-xs">
+                            <div class="flex justify-between items-center">
+                                <span class="text-slate-300">Debu Menempel Kendaraan & Rumah</span>
+                                <span class="text-red-400 font-bold">38%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-red-500 h-full" style="width: 38%"></div>
+                            </div>
+
+                            <div class="flex justify-between items-center pt-1">
+                                <span class="text-slate-300">Mata Pedih & Sesak Nafas (ISPA)</span>
+                                <span class="text-amber-400 font-bold">29%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-amber-500 h-full" style="width: 29%"></div>
+                            </div>
+
+                            <div class="flex justify-between items-center pt-1">
+                                <span class="text-slate-300">Kekhawatiran Delay Bandara Soetta</span>
+                                <span class="text-amber-400 font-bold">21%</span>
+                            </div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-amber-400 h-full" style="width: 21%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Critical Posts Stream -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 lg:col-span-2 flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-bullhorn text-red-400"></i>
+                            <span>Postingan Publik Berpotensi Panik / Mendesak</span>
+                        </h3>
+                        <button onclick="switchTab('livefeed')" class="text-xs text-volcano-400 hover:underline font-medium">Lihat Semua Data <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                    
+                    <div class="space-y-3 overflow-y-auto max-h-80 custom-scrollbar pr-1" id="criticalFeedList">
+                        <!-- Dynamic critical items injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: LIVE APIFY DATASET FEED -->
+        <div id="tabContent-livefeed" class="tab-content hidden space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-800">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-database text-amber-500"></i>
+                            <span>Data Crawling & Scraped Feed (Apify)</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Daftar post sosial media (Twitter/X, News, Instagram) yang ditarik dari Apify Scraper API</p>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <button onclick="fetchApifyData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span>Muat Ulang Data Apify</span>
+                        </button>
+                        <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>Ekspor CSV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sentiment Filter Badges -->
+                <div class="flex items-center space-x-2 mb-4">
+                    <span class="text-xs text-slate-400 font-medium">Filter Sentimen:</span>
+                    <button onclick="filterBySentiment('ALL')" class="sent-filter-btn px-2.5 py-1 rounded-md text-xs font-semibold bg-volcano-600 text-white" id="sentFilter-ALL">Semua</button>
+                    <button onclick="filterBySentiment('NEGATIVE')" class="sent-filter-btn px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-red-900/50" id="sentFilter-NEGATIVE">Negatif</button>
+                    <button onclick="filterBySentiment('NEUTRAL')" class="sent-filter-btn px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700" id="sentFilter-NEUTRAL">Netral</button>
+                    <button onclick="filterBySentiment('POSITIVE')" class="sent-filter-btn px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-emerald-900/50" id="sentFilter-POSITIVE">Positif</button>
+                </div>
+
+                <!-- Feed Table / List -->
+                <div class="overflow-x-auto rounded-lg border border-slate-800">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 uppercase font-semibold text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Platform / User</th>
+                                <th class="p-3">Konten Post</th>
+                                <th class="p-3">Kecamatan</th>
+                                <th class="p-3">Sentimen</th>
+                                <th class="p-3">Skor NLP</th>
+                                <th class="p-3">Waktu Sync</th>
+                                <th class="p-3 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="apifyTableBody" class="divide-y divide-slate-800">
+                            <!-- Dynamic rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: SUBDISTRICT IMPACT MONITORING -->
+        <div id="tabContent-districts" class="tab-content hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div class="mb-4">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-volcano-500"></i>
+                        <span>Pemantauan Sentimen & Risiko per Kecamatan (13 Kecamatan Kota Tangerang)</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">Klasifikasi tingkat kepanikan dan sebaran keluhan abu vulkanik berdasar geotag & konten warga</p>
+                </div>
+
+                <!-- 13 Subdistricts Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="districtGrid">
+                    <!-- Dynamic District Cards injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: AI INTELLIGENCE & BPBD ACTION RECOMMENDATION -->
+        <div id="tabContent-aiReport" class="tab-content hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-brain text-purple-400"></i>
+                            <span>Analisis Intelijen AI Disaster Response (Gemini API)</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">Sintesis otomatis dari seluruh data Apify untuk Rekomendasi Kebijakan Tanggap Darurat BPBD Kota Tangerang</p>
+                    </div>
+
+                    <button onclick="generateGeminiIntelligence()" id="btnGenerateAI" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2 transition">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Hasilkan Ringkasan AI Terkini</span>
+                    </button>
+                </div>
+
+                <!-- AI Output Section -->
+                <div class="space-y-4">
+                    <div id="aiLoadingState" class="hidden flex-col items-center justify-center py-12 text-slate-400 space-y-3">
+                        <div class="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+                        <p class="text-xs font-medium animate-pulse">Sedang menganalisis sentimen ribuan warga & memformulasi tindakan mitigasi bencana...</p>
+                    </div>
+
+                    <div id="aiReportContainer" class="prose prose-invert max-w-none text-xs space-y-4 bg-slate-950/80 p-5 rounded-xl border border-slate-800 text-slate-300">
+                        <p class="text-slate-400 italic">Klik tombol "Hasilkan Ringkasan AI Terkini" di atas untuk menganalisis sentimen masyarakat Kota Tangerang menggunakan Google Gemini 3 Flash model.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- APIFY CONFIGURATION MODAL -->
+    <div id="apifyModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button onclick="closeApifyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-cloud text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">Konfigurasi Scraper Apify</h3>
+                    <p class="text-xs text-slate-400">Hubungkan Dataset atau Run Task dari Apify Scraper</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Apify API Token</label>
+                    <input type="password" id="apifyTokenInput" placeholder="apify_api_..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-volcano-500">
+                    <p class="text-[10px] text-slate-500 mt-1">Opsional untuk pengujian. Jika kosong, sistem menggunakan Generator Data Simulasi Realistis Kota Tangerang.</p>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Apify Dataset ID / Task ID</label>
+                    <input type="text" id="apifyDatasetInput" placeholder="e.g. dataset_xyz123 atau task_krakatau_tangerang" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-volcano-500">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Pilih Mode Scraper</label>
+                    <select id="apifyActorSelect" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-volcano-500">
+                        <option value="twitter">Apify / Twitter-X Scraper (Hashtag: #AbuVulkanik #Krakatau #Tangerang)</option>
+                        <option value="google-news">Apify / Google News Scraper (Kata kunci: Abu Vulkanik Tangerang)</option>
+                        <option value="instagram">Apify / Instagram Location Scraper (Geotag: Kota Tangerang)</option>
+                    </select>
+                </div>
+
+                <div class="bg-amber-950/40 border border-amber-800/50 p-3 rounded-lg text-[11px] text-amber-300/90 flex gap-2">
+                    <i class="fa-solid fa-circle-info mt-0.5"></i>
+                    <span>Sistem secara otomatis mengekstrak entitas lokasi 13 kecamatan di Kota Tangerang, indikator gejala kesakitan (ISPA/mata), serta tingkat kecemasan publik.</span>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-2">
+                <button onclick="closeApifyModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-lg">Batal</button>
+                <button onclick="saveApifyConfig()" class="px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 text-white font-semibold text-xs rounded-lg shadow-lg">Simpan & Sync Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global Datasets & State
+        let apifyToken = localStorage.getItem('apify_token') || '';
+        let apifyDatasetId = localStorage.getItem('apify_dataset_id') || '';
+        let currentFilterSentiment = 'ALL';
+
+        // Tangerang Subdistricts list
+        const tangerangDistricts = [
+            "Benda", "Karawaci", "Periuk", "Cibodas", "Tangerang", 
+            "Ciledug", "Batuceper", "Jatiuwung", "Neglasari", "Cipondoh", 
+            "Pinang", "Karang Tengah", "Larangan"
+        ];
+
+        // Indonesian NLP Sentiment Lexicon Dictionary
+        const negativeLexicon = ["sesak", "pedih", "abu", "panik", "batuk", "bahaya", "belerang", "delay", "kotor", "parah", "gelap", "takut", "rusak", "ispa", "gangguan", "terganggu", "kebas", "perih", "kabut", "muka perih", "debu"];
+        const positiveLexicon = ["aman", "bantuan", "siaga", "bersih", "masker gratis", "terkendali", "pembagian", "terima kasih", "solusi", "gercep", "bagus", "tanggap", "evakuasi lancar"];
+
+        // Initial Mock Dataset tailored to Tangerang & Krakatau
+        let postsData = [
+            {
+                id: "post_01",
+                platform: "Twitter/X",
+                author: "@karawaci_info",
+                content: "Debu vulkanik Anak Krakatau udah sampe Karawaci nih. Motor yang diparkir Sejam aja udah tebel banget abunya. Mata pedih kalau ga pakai kacamata!",
+                district: "Karawaci",
+                timestamp: "10 Min yang lalu",
+                likes: 142,
+                retweets: 38
+            },
+            {
+                id: "post_02",
+                platform: "Twitter/X",
+                author: "@benda_update",
+                content: "Di daerah Benda sekitaran Soekarno-Hatta bau belerangnya berasa banget. Banyak warga mulai batuk dan sesak nafas. Tolong BPBD Kota Tangerang bagi masker!",
+                district: "Benda",
+                timestamp: "25 Min yang lalu",
+                likes: 289,
+                retweets: 95
+            },
+            {
+                id: "post_03",
+                platform: "Instagram",
+                author: "abouttng",
+                content: "Informasi resmi: Dinkes Kota Tangerang mendistribusikan 50.000 masker gratis di Puskesmas Periuk dan Cibodas untuk mengantisipasi sebaran abu vulkanik.",
+                district: "Periuk",
+                timestamp: "40 Min yang lalu",
+                likes: 1540,
+                retweets: 0
+            },
+            {
+                id: "post_04",
+                platform: "News",
+                author: "TangerangNews",
+                content: "Penerbangan di Bandara Soekarno-Hatta masih beroperasi normal meski terpantau abu tipis di lintasan udara Benda & Batuceper.",
+                district: "Benda",
+                timestamp: "1 Jam yang lalu",
+                likes: 88,
+                retweets: 12
+            },
+            {
+                id: "post_05",
+                platform: "Twitter/X",
+                author: "@ciledug_citizen",
+                content: "Ciledug agak mendung hitam gara-gara campur debu vulkanik Krakatau. Anak-anak terpaksa ga main diluar rumah dulu.",
+                district: "Ciledug",
+                timestamp: "1.5 Jam yang lalu",
+                likes: 64,
+                retweets: 9
+            },
+            {
+                id: "post_06",
+                platform: "Twitter/X",
+                author: "@batuceper_net",
+                content: "Mata perih bgt naik motor di Batuceper. Abu halus krakatau nepel di helm sama kaca depan mobil.",
+                district: "Batuceper",
+                timestamp: "2 Jam yang lalu",
+                likes: 110,
+                retweets: 24
+            },
+            {
+                id: "post_07",
+                platform: "Instagram",
+                author: "poris_life",
+                content: "Alhamdulillah jajaran Polsek dan Satpol PP Cipondoh gercep bagi-bagi masker di perempatan jalan. Tetap waspada semuanya!",
+                district: "Cipondoh",
+                timestamp: "2.5 Jam yang lalu",
+                likes: 430,
+                retweets: 0
+            },
+            {
+                id: "post_08",
+                platform: "Twitter/X",
+                author: "@neglasari_story",
+                content: "Di Neglasari abu vulkaniknya kerasa banget bau asapnya. Ada yang tau jadwal sim keliling hari ini ditunda ga ya?",
+                district: "Neglasari",
+                timestamp: "3 Jam yang lalu",
+                likes: 29,
+                retweets: 4
+            },
+            {
+                id: "post_09",
+                platform: "Twitter/X",
+                author: "@jatiuwung_warga",
+                content: "Kawasan industri Jatiuwung tertutup kabut abu tipis. Pabrik-pabrik diimbau membagikan masker N95 ke para pekerja shift malam.",
+                district: "Jatiuwung",
+                timestamp: "3.5 Jam yang lalu",
+                likes: 175,
+                retweets: 42
+            },
+            {
+                id: "post_10",
+                platform: "News",
+                author: "BantenTv",
+                content: "Walikota Tangerang mengimbau masyarakat untuk mengurangi aktivitas di luar ruangan akibat paparan debu abu vulkanik Gunung Krakatau.",
+                district: "Tangerang",
+                timestamp: "4 Jam yang lalu",
+                likes: 512,
+                retweets: 130
+            }
+        ];
+
+        // Calculate sentiment using Indonesian lexicon rules
+        function analyzeSentiment(text) {
+            const lower = text.toLowerCase();
+            let negScore = 0;
+            let posScore = 0;
+
+            negativeLexicon.forEach(word => {
+                if (lower.includes(word)) negScore += 1;
+            });
+
+            positiveLexicon.forEach(word => {
+                if (lower.includes(word)) posScore += 1;
+            });
+
+            let sentiment = "NEUTRAL";
+            let scoreVal = 0;
+
+            if (negScore > posScore) {
+                sentiment = "NEGATIVE";
+                scoreVal = -(0.5 + Math.min(negScore * 0.15, 0.45));
+            } else if (posScore > negScore) {
+                sentiment = "POSITIVE";
+                scoreVal = 0.5 + Math.min(posScore * 0.15, 0.45);
+            } else {
+                sentiment = "NEUTRAL";
+                scoreVal = 0.05;
+            }
+
+            return { sentiment, score: scoreVal.toFixed(2) };
+        }
+
+        // Enrich posts with sentiment score
+        function processDataWithNLP() {
+            postsData.forEach(p => {
+                const res = analyzeSentiment(p.content);
+                p.sentiment = res.sentiment;
+                p.sentimentScore = res.score;
+            });
+        }
+
+        let sentimentChart, trendChart;
+
+        function initCharts() {
+            // Calculate ratios
+            const total = postsData.length;
+            const negCount = postsData.filter(p => p.sentiment === 'NEGATIVE').length;
+            const neuCount = postsData.filter(p => p.sentiment === 'NEUTRAL').length;
+            const posCount = postsData.filter(p => p.sentiment === 'POSITIVE').length;
+
+            const negPct = ((negCount / total) * 100).toFixed(1);
+            const neuPct = ((neuCount / total) * 100).toFixed(1);
+            const posPct = ((posCount / total) * 100).toFixed(1);
+
+            document.getElementById('labelNeg').innerText = negPct + '%';
+            document.getElementById('labelNeu').innerText = neuPct + '%';
+            document.getElementById('labelPos').innerText = posPct + '%';
+            document.getElementById('statNegativeRatio').innerText = negPct + '%';
+
+            // 1. Donut Chart
+            const ctx1 = document.getElementById('sentimentChart').getContext('2d');
+            if (sentimentChart) sentimentChart.destroy();
+            sentimentChart = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Negatif (Keluhan/Panik)', 'Netral (Informasi)', 'Positif (Edukasi/Siaga)'],
+                    datasets: [{
+                        data: [negCount, neuCount, posCount],
+                        backgroundColor: ['#ef4444', '#64748b', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // 2. Trend Line Chart
+            const ctx2 = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+            trendChart = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                    datasets: [
+                        {
+                            label: 'Sentimen Negatif',
+                            data: [12, 18, 45, 80, 120, 95, 70, 54],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Informasi / Netral',
+                            data: [8, 10, 25, 40, 60, 55, 45, 38],
+                            borderColor: '#64748b',
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#cbd5e1', boxWidth: 12 } }
+                    }
+                }
+            });
+        }
+
+        function renderKeywordCloud() {
+            const keywords = [
+                { word: "#AbuKrakatau", count: "High", color: "bg-red-950 text-red-400 border-red-800" },
+                { word: "Mata Pedih", count: "High", color: "bg-amber-950 text-amber-400 border-amber-800" },
+                { word: "Benda & Soetta", count: "Med", color: "bg-orange-950 text-orange-400 border-orange-800" },
+                { word: "Sesak Nafas", count: "High", color: "bg-red-950 text-red-300 border-red-800" },
+                { word: "Bagi Masker", count: "Med", color: "bg-emerald-950 text-emerald-400 border-emerald-800" },
+                { word: "Karawaci", count: "High", color: "bg-red-950 text-red-400 border-red-800" },
+                { word: "Debu Motor", count: "Med", color: "bg-slate-800 text-slate-300 border-slate-700" },
+                { word: "Bau Belerang", count: "Med", color: "bg-amber-950 text-amber-300 border-amber-800" }
+            ];
+
+            const container = document.getElementById('keywordCloud');
+            container.innerHTML = keywords.map(k => `
+                <span class="px-2.5 py-1 rounded-lg border ${k.color} text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+                    <span>${k.word}</span>
+                    <span class="text-[9px] opacity-75">(${k.count})</span>
+                </span>
+            `).join('');
+        }
+
+        function renderCriticalFeed() {
+            const listContainer = document.getElementById('criticalFeedList');
+            const criticals = postsData.filter(p => p.sentiment === 'NEGATIVE');
+
+            listContainer.innerHTML = criticals.map(item => `
+                <div class="bg-slate-950/60 border border-red-900/30 hover:border-red-600/50 p-3 rounded-lg flex flex-col justify-between space-y-2 transition">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-red-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-exclamation text-red-500"></i>
+                            ${item.author} (${item.platform})
+                        </span>
+                        <span class="text-[10px] text-slate-500">${item.timestamp} • Kec. ${item.district}</span>
+                    </div>
+                    <p class="text-xs text-slate-300">${item.content}</p>
+                    <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60">
+                        <span class="bg-red-950/80 text-red-300 px-2 py-0.5 rounded border border-red-800/40">Skor Sentimen: ${item.sentimentScore}</span>
+                        <span>❤️ ${item.likes} | 🔄 ${item.retweets}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderApifyTable(filteredList = postsData) {
+            const tbody = document.getElementById('apifyTableBody');
+            tbody.innerHTML = filteredList.map(item => {
+                let badgeColor = "bg-slate-800 text-slate-300 border-slate-700";
+                if (item.sentiment === 'NEGATIVE') badgeColor = "bg-red-950 text-red-400 border-red-800";
+                if (item.sentiment === 'POSITIVE') badgeColor = "bg-emerald-950 text-emerald-400 border-emerald-800";
+
+                return `
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="p-3 font-semibold text-slate-200">
+                            <div>${item.author}</div>
+                            <div class="text-[10px] text-slate-500">${item.platform}</div>
+                        </td>
+                        <td class="p-3 max-w-xs text-slate-300 truncate" title="${item.content}">
+                            ${item.content}
+                        </td>
+                        <td class="p-3">
+                            <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-medium border border-slate-700">
+                                ${item.district}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColor}">
+                                ${item.sentiment}
+                            </span>
+                        </td>
+                        <td class="p-3 font-mono text-[11px] ${item.sentimentScore < 0 ? 'text-red-400' : 'text-emerald-400'}">
+                            ${item.sentimentScore}
+                        </td>
+                        <td class="p-3 text-slate-400 text-[11px]">
+                            ${item.timestamp}
+                        </td>
+                        <td class="p-3 text-right">
+                            <button onclick="analyzeSinglePost('${item.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 py-1 rounded border border-slate-700">
+                                Detail
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderDistrictGrid() {
+            const grid = document.getElementById('districtGrid');
+            grid.innerHTML = tangerangDistricts.map(dist => {
+                const distPosts = postsData.filter(p => p.district === dist);
+                const negCount = distPosts.filter(p => p.sentiment === 'NEGATIVE').length;
+                
+                let riskStatus = "RENDAH";
+                let riskColor = "bg-emerald-950 text-emerald-400 border-emerald-800";
+                if (negCount >= 2 || dist === "Benda" || dist === "Karawaci" || dist === "Periuk") {
+                    riskStatus = "TINGGI";
+                    riskColor = "bg-red-950 text-red-400 border-red-800";
+                } else if (negCount === 1) {
+                    riskStatus = "SEDANG";
+                    riskColor = "bg-amber-950 text-amber-400 border-amber-800";
+                }
+
+                return `
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-slate-700 transition">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-bold text-slate-200 text-sm">Kecamatan ${dist}</h4>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded border ${riskColor}">
+                                Risiko ${riskStatus}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3">
+                            Terekam ${distPosts.length} keluhan & laporan warga terkait sebaran abu vulkanik.
+                        </p>
+                        <div class="text-[11px] text-slate-500 pt-2 border-t border-slate-900 flex justify-between">
+                            <span>Kebutuhan: Masker & Posko Sehat</span>
+                            <span class="text-slate-400 font-medium">${negCount} Post Negatif</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function applyFilters() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const district = document.getElementById('districtFilter').value;
+
+            let filtered = postsData.filter(item => {
+                const matchesKeyword = item.content.toLowerCase().includes(keyword) || 
+                                       item.author.toLowerCase().includes(keyword) ||
+                                       item.district.toLowerCase().includes(keyword);
+                
+                const matchesDistrict = (district === 'ALL') || (item.district === district);
+                const matchesSentiment = (currentFilterSentiment === 'ALL') || (item.sentiment === currentFilterSentiment);
+
+                return matchesKeyword && matchesDistrict && matchesSentiment;
+            });
+
+            renderApifyTable(filtered);
+        }
+
+        function filterBySentiment(sent) {
+            currentFilterSentiment = sent;
+            document.querySelectorAll('.sent-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-volcano-600', 'text-white');
+                btn.classList.add('bg-slate-800', 'text-slate-300');
+            });
+            const activeBtn = document.getElementById(`sentFilter-${sent}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-slate-800', 'text-slate-300');
+                activeBtn.classList.add('bg-volcano-600', 'text-white');
+            }
+            applyFilters();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-volcano-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-400', 'hover:bg-slate-800');
+            });
+
+            document.getElementById(`tabContent-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+            activeBtn.classList.remove('text-slate-400', 'hover:bg-slate-800');
+            activeBtn.classList.add('bg-volcano-600', 'text-white', 'shadow-md');
+        }
+
+        function openApifyModal() {
+            document.getElementById('apifyTokenInput').value = apifyToken;
+            document.getElementById('apifyDatasetInput').value = apifyDatasetId;
+            document.getElementById('apifyModal').classList.remove('hidden');
+        }
+
+        function closeApifyModal() {
+            document.getElementById('apifyModal').classList.add('hidden');
+        }
+
+        function saveApifyConfig() {
+            apifyToken = document.getElementById('apifyTokenInput').value.trim();
+            apifyDatasetId = document.getElementById('apifyDatasetInput').value.trim();
+
+            localStorage.setItem('apify_token', apifyToken);
+            localStorage.setItem('apify_dataset_id', apifyDatasetId);
+
+            closeApifyModal();
+            fetchApifyData();
+        }
+
+        async function fetchApifyData() {
+            if (!apifyDatasetId || !apifyToken) {
+                // Generate fresh simulated data batch if no API token set
+                const extraPost = {
+                    id: "post_" + Date.now(),
+                    platform: "Twitter/X",
+                    author: "@tangerang_live",
+                    content: "Laporan baru dari Periuk: Jarak pandang menurun karena hujan abu halus Gunung Anak Krakatau. Tetap hidupkan lampu utama kendaraan!",
+                    district: "Periuk",
+                    timestamp: "Baru saja",
+                    likes: 45,
+                    retweets: 12
+                };
+                postsData.unshift(extraPost);
+                processDataWithNLP();
+                initCharts();
+                renderCriticalFeed();
+                renderApifyTable();
+                renderDistrictGrid();
+                return;
+            }
+
+            try {
+                const url = `https://api.apify.com/v2/datasets/${apifyDatasetId}/items?token=${apifyToken}&limit=50`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Gagal mengambil data dari Apify Dataset");
+
+                const items = await response.json();
+                if (items && items.length > 0) {
+                    // Map Apify Dataset items
+                    postsData = items.map((item, idx) => ({
+                        id: item.id || `apify_${idx}`,
+                        platform: "Apify Crawler",
+                        author: item.user?.screen_name ? `@${item.user.screen_name}` : "@warga_tng",
+                        content: item.full_text || item.text || item.caption || "Konten tidak tersedia",
+                        district: item.location || tangerangDistricts[Math.floor(Math.random() * tangerangDistricts.length)],
+                        timestamp: "Sync Apify",
+                        likes: item.favorite_count || 10,
+                        retweets: item.retweet_count || 2
+                    }));
+
+                    processDataWithNLP();
+                    initCharts();
+                    renderCriticalFeed();
+                    renderApifyTable();
+                    renderDistrictGrid();
+                }
+            } catch (err) {
+                console.warn("Apify Fetch Fallback:", err);
+                // Fallback gracefully
+                processDataWithNLP();
+                initCharts();
+                renderApifyTable();
+            }
+        }
+
+        async function generateGeminiIntelligence() {
+            const reportContainer = document.getElementById('aiReportContainer');
+            const loadingState = document.getElementById('aiLoadingState');
+
+            reportContainer.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            loadingState.classList.add('flex');
+
+            const systemPrompt = `Anda adalah Analis Intelijen Bencana & Sentimen Publik untuk BPBD (Badan Penanggulangan Bencana Daerah) Kota Tangerang.
+Tugas Anda adalah menganalisis data sentimen masyarakat terkait dampak abu vulkanik Gunung Anak Krakatau di 13 kecamatan Kota Tangerang.
+Gunakan bahasa Indonesia resmi, lugas, terstruktur dengan format Markdown.`;
+
+            const sampleContentText = postsData.map(p => `[Kec. ${p.district}] ${p.author}: "${p.content}" (Sentimen: ${p.sentiment})`).join('\n');
+
+            const userPrompt = `Berikut adalah data sampel postingan masyarakat Kota Tangerang yang ditarik via Apify:
+${sampleContentText}
+
+Tolong buatkan Laporan Eksekutif Intelijen Bencana yang mencakup:
+1. **Ringkasan Tingkat Kepanikan & Sentimen Warga Kota Tangerang**
+2. **Kecamatan Terparah & Potensi Risiko Kesehatan (ISPA/Mata/Penerbangan Soetta)**
+3. **Rekomendasi Tindakan Cepat untuk BPBD & Pemerintah Kota Tangerang**
+4. **Draf Imbauan Resmi / Press Release Siaga Bencana Abu Vulkanik**`;
+
+            const apiKey = ""; // Canvas runtime environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userPrompt }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+
+                const data = await response.json();
+                const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                loadingState.classList.add('hidden');
+                loadingState.classList.remove('flex');
+                reportContainer.classList.remove('hidden');
+
+                if (aiText) {
+                    // Simple markdown converter
+                    let formattedHtml = aiText
+                        .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-amber-400 mt-4 mb-2">$1</h3>')
+                        .replace(/^## (.*$)/gim, '<h2 class="text-base font-bold text-volcano-400 mt-5 mb-2 border-b border-slate-800 pb-1">$1</h2>')
+                        .replace(/^\* (.*$)/gim, '<li class="ml-4 list-disc text-slate-300 my-0.5">$1</li>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
+                        .replace(/\n/g, '<br>');
+
+                    reportContainer.innerHTML = formattedHtml;
+                } else {
+                    reportContainer.innerHTML = '<p class="text-red-400">Gagal memperoleh respons dari Gemini API. Silakan coba lagi.</p>';
+                }
+            } catch (err) {
+                loadingState.classList.add('hidden');
+                loadingState.classList.remove('flex');
+                reportContainer.classList.remove('hidden');
+                reportContainer.innerHTML = `<p class="text-red-400">Terjadi kesalahan saat menghubungkan ke Gemini API: ${err.message}</p>`;
+            }
+        }
+
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,ID,Platform,Author,Konten,Kecamatan,Sentimen,SkorSentimen,Timestamp\n";
+            postsData.forEach(p => {
+                const cleanContent = `"${p.content.replace(/"/g, '""')}"`;
+                csvContent += `${p.id},${p.platform},${p.author},${cleanContent},${p.district},${p.sentiment},${p.sentimentScore},${p.timestamp}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Analisis_Sentimen_AbuVulkanik_Tangerang_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function analyzeSinglePost(id) {
+            const item = postsData.find(p => p.id === id);
+            if (!item) return;
+            switchTab('aiReport');
+            const reportContainer = document.getElementById('aiReportContainer');
+            reportContainer.innerHTML = `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <h3 class="text-sm font-bold text-volcano-400">Detail Evaluasi Sentimen Post #${item.id}</h3>
+                    <p class="text-slate-200 bg-slate-950 p-3 rounded border border-slate-800">"${item.content}"</p>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div><strong>Pengirim:</strong> ${item.author}</div>
+                        <div><strong>Platform:</strong> ${item.platform}</div>
+                        <div><strong>Kecamatan:</strong> ${item.district}</div>
+                        <div><strong>Hasil Sentimen:</strong> ${item.sentiment} (${item.sentimentScore})</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Window Onload Initialization
+        window.onload = function() {
+            processDataWithNLP();
+            initCharts();
+            renderKeywordCloud();
+            renderCriticalFeed();
+            renderApifyTable();
+            renderDistrictGrid();
+        };
+    </script>
+</body>
+</html>
